@@ -1,0 +1,24 @@
+{
+  "name": "Swimming Progress Tracker",
+  "short_name": "Swim Tracker",
+  "description": "Track swimming level 1 skill progress from March to June 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eaf4fc",
+  "theme_color": "#1e6fa5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

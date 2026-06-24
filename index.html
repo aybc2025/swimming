@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1e6fa5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Swim Tracker">
+<meta name="description" content="Track swimming Level 1 skill progress">
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+
+<title>Swimming Progress</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --water-deep: #0a3d62;
+    --water-mid: #1e6fa5;
+    --water-light: #3ea6d9;
+    --water-pale: #d0eaf8;
+    --foam: #f0f8ff;
+    --gold: #f5a623;
+    --gold-light: #fef3dc;
+    --green: #27ae60;
+    --green-light: #e8f8f0;
+    --red: #e74c3c;
+    --red-light: #fdecea;
+    --ink: #1a2a3a;
+    --muted: #7a92a8;
+    --surface: #ffffff;
+    --bg: #eaf4fc;
+    --shadow: 0 2px 16px rgba(10,61,98,0.10);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: 'Nunito Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: calc(16px + var(--safe-bottom));
+  }
+
+  /* ── INSTALL BANNER ── */
+  #install-banner {
+    display: none;
+    position: fixed;
+    bottom: calc(16px + var(--safe-bottom));
+    left: 16px; right: 16px;
+    background: var(--water-deep);
+    color: white;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 32px rgba(10,61,98,0.35);
+    z-index: 1000;
+    animation: slideUp 0.4s cubic-bezier(.4,0,.2,1);
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  #install-banner.visible { display: flex; }
+  #install-banner .install-text { flex: 1; }
+  #install-banner .install-text strong { display: block; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; }
+  #install-banner .install-text span { font-size: 0.78rem; opacity: 0.8; }
+  #install-banner button {
+    background: var(--gold);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 0.84rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #install-dismiss {
+    background: transparent !important;
+    padding: 4px 8px !important;
+    opacity: 0.6;
+    font-size: 1.2rem !important;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ── UPDATE BANNER ── */
+  #update-banner {
+    display: none;
+    background: var(--green);
+    color: white;
+    text-align: center;
+    padding: 10px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.84rem;
+    cursor: pointer;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+  #update-banner.visible { display: flex; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, var(--water-deep) 0%, var(--water-mid) 60%, var(--water-light) 100%);
+    color: white;
+    padding: calc(20px + var(--safe-top)) 24px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 36px;
+    background: var(--bg);
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .wave-emoji {
+    font-size: 2.6rem;
+    display: block;
+    margin-bottom: 8px;
+    animation: bob 3s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+  header h1 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  header p {
+    font-size: 0.9rem;
+    opacity: 0.82;
+    font-weight: 600;
+  }
+  .offline-pill {
+    display: none;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 99px;
+    padding: 4px 14px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .offline-pill.visible { display: inline-block; }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px 20px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+  }
+  .badge.r { background: var(--green); color: white; }
+  .badge.nr { background: var(--red-light); color: var(--red); border: 1.5px solid var(--red); }
+
+  /* ── SUMMARY ── */
+  .summary {
+    margin: 0 16px 20px;
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+  }
+  .summary-col {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+  }
+  .summary-col + .summary-col { border-left: 1.5px solid var(--bg); }
+  .summary-col .label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .summary-col .big {
+    font-family: 'Nunito', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .summary-col .sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .big.green { color: var(--green); }
+  .big.blue { color: var(--water-mid); }
+  .big.gold { color: var(--gold); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { margin: 0 16px 24px; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .progress-track {
+    height: 12px;
+    background: var(--water-pale);
+    border-radius: 99px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-bar-march {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--water-light), var(--water-mid));
+    width: 0;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-bar-june {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--green), #2ecc71);
+    width: 0;
+    transition: width 1.4s 0.2s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-dates {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .dot-march { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: var(--water-mid); margin-right: 4px; }
+  .dot-june { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: var(--green); margin-right: 4px; }
+
+  /* ── NEW BANNER ── */
+  .new-banner {
+    margin: 0 16px 16px;
+    background: linear-gradient(135deg, #fff8e1, #fffbf0);
+    border: 1.5px solid var(--gold);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .new-banner h3 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 900;
+    color: #7a5a00;
+    margin-bottom: 6px;
+  }
+  .new-banner p { font-size: 0.8rem; color: #7a5a00; line-height: 1.5; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    margin: 0 16px 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: var(--shadow);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    border-radius: 9px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--water-mid);
+    color: white;
+    box-shadow: 0 2px 8px rgba(30,111,165,0.3);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin: 0 16px 10px;
+  }
+
+  /* ── SKILL CARD ── */
+  .skill-card {
+    margin: 0 16px 10px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border-left: 4px solid var(--water-light);
+  }
+  .skill-card.mastered { border-left-color: var(--gold); }
+  .skill-card.both-ready { border-left-color: var(--green); }
+
+  .skill-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    gap: 12px;
+    user-select: none;
+  }
+  .skill-icon { font-size: 1.4rem; width: 36px; text-align: center; flex-shrink: 0; }
+  .skill-name {
+    flex: 1;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .skill-badges { display: flex; gap: 6px; flex-shrink: 0; }
+  .skill-date-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+    display: block;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .improved-tag {
+    display: inline-block;
+    background: var(--gold);
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .chevron {
+    font-size: 0.85rem;
+    color: var(--muted);
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+  .skill-header.open .chevron { transform: rotate(180deg); }
+
+  .skill-body {
+    display: none;
+    padding: 0 16px 14px 64px;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: #4a6278;
+    border-top: 1px solid var(--bg);
+    animation: fadeIn 0.2s ease;
+  }
+  .skill-body.open { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .skill-body p { margin-bottom: 6px; }
+  .skill-body .tip {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--gold-light);
+    border-radius: 8px;
+    font-size: 0.79rem;
+    color: #7a5a00;
+    font-weight: 600;
+  }
+  .skill-body .tip.progress-tip {
+    background: var(--green-light);
+    color: #155a2f;
+  }
+  .skill-body .tip.next-tip {
+    background: #f0f4ff;
+    color: #2c3e7a;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 20px 20px calc(24px + var(--safe-bottom));
+    font-size: 0.76rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  footer span { color: var(--water-light); }
+  .offline-note { display: none; font-size: 0.72rem; color: var(--green); margin-top: 4px; }
+  .offline-note.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- UPDATE BANNER -->
+<div id="update-banner" role="alert">
+  🔄 New version available — <strong style="margin: 0 4px;">tap to update</strong> 🔄
+</div>
+
+<!-- HEADER -->
+<header>
+  <span class="wave-emoji">🏊</span>
+  <h1>Swimming Progress</h1>
+  <p>March 2026 → June 2026 · Level 1</p>
+  <div class="offline-pill" id="offline-pill">📶 Offline mode</div>
+</header>
+
+<div style="height:20px"></div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><span class="badge r">R</span> Ready</div>
+  <div class="legend-item"><span class="badge nr">NR</span> Not Yet Ready</div>
+  <div class="legend-item" style="font-size:0.78rem">⭐ = Newly Mastered</div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <div class="summary-col">
+    <div class="label">March</div>
+    <div class="big blue">6<span style="font-size:1rem;font-weight:700">/15</span></div>
+    <div class="sub">skills ready</div>
+  </div>
+  <div class="summary-col">
+    <div class="label">June</div>
+    <div class="big green">9<span style="font-size:1rem;font-weight:700">/15</span></div>
+    <div class="sub">skills ready</div>
+  </div>
+  <div class="summary-col">
+    <div class="label">Growth</div>
+    <div class="big gold">+3</div>
+    <div class="sub">new skills 🎉</div>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span><span class="dot-march"></span>March 40%</span>
+    <span><span class="dot-june"></span>June 60%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-bar-march" id="bar-march"></div>
+    <div class="progress-bar-june" id="bar-june"></div>
+  </div>
+  <div class="progress-dates"><span>0%</span><span>50%</span><span>100%</span></div>
+</div>
+
+<!-- NEW SKILLS BANNER -->
+<div class="new-banner">
+  <h3>⭐ 3 New Skills Mastered!</h3>
+  <p>Between March and June, <strong>Submersion</strong>, <strong>Bob (3×)</strong>, and <strong>Weight Transfer</strong> moved from NR to Ready — the hardest early milestones for most beginners!</p>
+</div>
+
+<!-- TABS -->
+<div class="tabs" role="tablist">
+  <button class="tab active" role="tab" onclick="showTab('all', this)">All (15)</button>
+  <button class="tab" role="tab" onclick="showTab('ready', this)">✅ Ready (9)</button>
+  <button class="tab" role="tab" onclick="showTab('progress', this)">🔄 Working (6)</button>
+</div>
+
+<div class="section-title">Tap any skill to learn more</div>
+
+<div id="tab-all" class="tab-content active"></div>
+<div id="tab-ready" class="tab-content"></div>
+<div id="tab-progress" class="tab-content"></div>
+
+<footer>
+  Made with 💙 · Swimming Level 1<br>
+  <span>Works offline · Add to Home Screen</span>
+  <div class="offline-note" id="offline-note">✓ Saved for offline use</div>
+</footer>
+
+<!-- INSTALL BANNER -->
+<div id="install-banner" role="dialog" aria-label="Install app">
+  <div class="install-text">
+    <strong>📲 Add to Home Screen</strong>
+    <span>Works offline, like a real app</span>
+  </div>
+  <button id="install-btn">Install</button>
+  <button id="install-dismiss" class="install-btn">✕</button>
+</div>
+
+<script>
+// ── DATA ──
+const skills = [
+  {
+    name: "Pool Orientation",
+    icon: "🏊",
+    march: "R", june: "R",
+    desc: "Learning the layout and rules of the pool — where to enter, where the shallow and deep ends are, pool etiquette, and safety rules. This is always the first step before any swimming begins.",
+    tip: null, tipType: null
+  },
+  {
+    name: "Enter and Exit Safely",
+    icon: "🪜",
+    march: "R", june: "R",
+    desc: "Knowing how to get into and out of the pool safely — using the steps or ladder, sitting on the edge first, or stepping in carefully. Prevents slips and injuries on wet pool decks.",
+    tip: null, tipType: null
+  },
+  {
+    name: "Safe Movement Through Water",
+    icon: "🚶",
+    march: "R", june: "R",
+    desc: "Walking (not running) through shallow water, learning how water resistance feels, and keeping balance while moving. Builds confidence and spatial awareness in the pool environment.",
+    tip: null, tipType: null
+  },
+  {
+    name: "Get Face and Head Wet",
+    icon: "💦",
+    march: "R", june: "R",
+    desc: "Splashing water on the face, dipping the head, or pouring water over the head. A small but important step in overcoming water-fear and getting comfortable with wet sensations around eyes and ears.",
+    tip: null, tipType: null
+  },
+  {
+    name: "Submersion",
+    icon: "🤿",
+    march: "NR", june: "R",
+    desc: "Putting the entire head under water and holding breath briefly. A major milestone — it requires trusting that you can hold your breath and come back up safely. Many kids resist this at first.",
+    tip: "⭐ Newly mastered between March and June — this is a huge deal! Submersion is often the #1 fear barrier for beginners.",
+    tipType: "progress-tip"
+  },
+  {
+    name: "Bob (3×)",
+    icon: "🪀",
+    march: "NR", june: "R",
+    desc: "Jumping or dipping up and down three times while submerging the head each time. Builds rhythm with breath-holding, and helps kids feel comfortable going under repeatedly in a controlled way.",
+    tip: "⭐ Newly mastered! Bobbing builds the foundation for breath control needed in all swimming strokes.",
+    tipType: "progress-tip"
+  },
+  {
+    name: "Weight Transfer Skill",
+    icon: "⚖️",
+    march: "NR", june: "R",
+    desc: "Shifting body weight to move through water or transition between positions — for example, leaning forward to start floating, or rolling from back to front. Core to all aquatic movement.",
+    tip: "⭐ Newly mastered! Understanding weight transfer is key to progressing to glides and strokes.",
+    tipType: "progress-tip"
+  },
+  {
+    name: "Assisted Back Float",
+    icon: "🛟",
+    march: "R", june: "R",
+    desc: "Floating on the back with an instructor holding the swimmer's head or back for support. Gets the body used to the horizontal position and the sensation of ears in the water. Many kids find this relaxing once they trust the support.",
+    tip: null, tipType: null
+  },
+  {
+    name: "Unassisted Back Float",
+    icon: "🌊",
+    march: "NR", june: "NR",
+    desc: "Floating on the back completely independently, without any instructor support. Requires relaxing the body fully and trusting buoyancy — one of the hardest psychological leaps in beginner swimming.",
+    tip: "Working on this! The key is relaxing the hips and letting the water do the work — tension makes you sink.",
+    tipType: "next-tip"
+  },
+  {
+    name: "Back Glide",
+    icon: "🔙",
+    march: "NR", june: "NR",
+    desc: "Pushing off the wall or floor and gliding on the back without kicking — letting the body move through water in a streamlined position. Builds body awareness and a feel for hydrodynamics.",
+    tip: "Working on this! Once the back float is comfortable, gliding follows naturally.",
+    tipType: "next-tip"
+  },
+  {
+    name: "Back Glide and Kick",
+    icon: "🦵",
+    march: "NR", june: "NR",
+    desc: "Combining a back glide with a flutter kick to propel through the water while on the back. The flutter kick should come from the hips, with legs mostly straight and toes pointed.",
+    tip: "Working on this! Legs should stay relaxed and close together — big splashes mean knees are bending too much.",
+    tipType: "next-tip"
+  },
+  {
+    name: "Assisted Front Float",
+    icon: "🏋️",
+    march: "R", june: "R",
+    desc: "Floating face-down on the stomach with instructor support. The face goes in the water (often with goggles). Getting comfortable looking down at the pool floor while the body is horizontal and supported.",
+    tip: null, tipType: null
+  },
+  {
+    name: "Unassisted Front Float",
+    icon: "⬇️",
+    march: "NR", june: "NR",
+    desc: "Floating face-down independently, without any support. Requires breath-holding and full-body relaxation. The natural next step after submersion is mastered.",
+    tip: "Working on this! Arms stretched forward and a deep breath before going under helps stay flat.",
+    tipType: "next-tip"
+  },
+  {
+    name: "Hand Lead Front Glide",
+    icon: "🤲",
+    march: "NR", june: "NR",
+    desc: "Pushing off and gliding forward on the stomach with arms stretched out in front. The hands lead the body through the water — this is the foundation of all freestyle (front crawl) technique.",
+    tip: "Working on this! Eyes look straight down at the pool floor to keep the body aligned.",
+    tipType: "next-tip"
+  },
+  {
+    name: "Head Lead Front Glide and Kick",
+    icon: "🏃",
+    march: "NR", june: "NR",
+    desc: "Gliding on the stomach with head leading (arms at sides) and a flutter kick. This advanced variation builds the connection between kicking and full-body propulsion — a precursor to real swimming!",
+    tip: "Working on this! This is the last skill in Level 1, leading directly into stroke learning in Level 2.",
+    tipType: "next-tip"
+  }
+];
+
+// ── RENDER ──
+function renderSkill(skill) {
+  const improved = skill.march === 'NR' && skill.june === 'R';
+  const bothReady = skill.march === 'R' && skill.june === 'R';
+  const cardClass = improved ? 'mastered' : bothReady ? 'both-ready' : '';
+  const starTag = improved ? `<span class="improved-tag">⭐ New</span>` : '';
+  const marchBadge = `<div><span class="skill-date-label">Mar</span><span class="badge ${skill.march.toLowerCase()}">${skill.march}</span></div>`;
+  const juneBadge = `<div><span class="skill-date-label">Jun</span><span class="badge ${skill.june.toLowerCase()}">${skill.june}</span></div>`;
+  const tipHtml = skill.tip
+    ? `<div class="tip ${skill.tipType || ''}">${skill.tip}</div>`
+    : '';
+
+  return `
+  <div class="skill-card ${cardClass}">
+    <div class="skill-header" onclick="toggleSkill(this)">
+      <span class="skill-icon">${skill.icon}</span>
+      <div class="skill-name">${skill.name}${starTag}</div>
+      <div class="skill-badges">${marchBadge}${juneBadge}</div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="skill-body">
+      <p>${skill.desc}</p>${tipHtml}
+    </div>
+  </div>`;
+}
+
+function toggleSkill(header) {
+  const wasOpen = header.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.skill-header.open').forEach(h => {
+    h.classList.remove('open');
+    h.nextElementSibling.classList.remove('open');
+  });
+  if (!wasOpen) {
+    header.classList.add('open');
+    header.nextElementSibling.classList.add('open');
+  }
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+
+  let filtered;
+  if (name === 'ready') filtered = skills.filter(s => s.june === 'R');
+  else if (name === 'progress') filtered = skills.filter(s => s.june === 'NR');
+  else filtered = skills;
+
+  const el = document.getElementById(`tab-${name}`);
+  el.classList.add('active');
+  el.innerHTML = filtered.map(renderSkill).join('');
+}
+
+// Initial render
+document.getElementById('tab-all').innerHTML = skills.map(renderSkill).join('');
+document.getElementById('tab-ready').innerHTML = skills.filter(s => s.june === 'R').map(renderSkill).join('');
+document.getElementById('tab-progress').innerHTML = skills.filter(s => s.june === 'NR').map(renderSkill).join('');
+
+// Animate progress bars on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('bar-march').style.width = '40%';
+    document.getElementById('bar-june').style.width = '60%';
+  }, 300);
+});
+
+// ── SERVICE WORKER ──
+let swRegistration = null;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      swRegistration = await navigator.serviceWorker.register('/sw.js');
+
+      swRegistration.addEventListener('updatefound', () => {
+        const newWorker = swRegistration.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            const banner = document.getElementById('update-banner');
+            banner.classList.add('visible');
+            banner.addEventListener('click', () => {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              window.location.reload();
+            });
+          }
+        });
+      });
+
+      document.getElementById('offline-note').classList.add('visible');
+    } catch (err) {
+      console.warn('SW registration failed:', err);
+    }
+  });
+}
+
+// ── OFFLINE INDICATOR ──
+function updateOnlineStatus() {
+  document.getElementById('offline-pill').classList.toggle('visible', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ── INSTALL PROMPT ──
+let deferredPrompt = null;
+const installBanner = document.getElementById('install-banner');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  setTimeout(() => installBanner.classList.add('visible'), 3000);
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBanner.classList.remove('visible');
+});
+
+document.getElementById('install-dismiss').addEventListener('click', () => {
+  installBanner.classList.remove('visible');
+  deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  installBanner.classList.remove('visible');
+  deferredPrompt = null;
+});
+</script>
+</body>
+</html>
